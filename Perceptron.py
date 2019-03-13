@@ -1,6 +1,6 @@
 
 import os, multiprocessing # General libraries
-import numpy as np, pandas as pd # Data processing libraries
+import numpy as np, pandas as pd, idx2numpy # Data processing libraries
 import matplotlib.pyplot as plt, seaborn as sns, cv2 # Plotting libraries
 from multiprocessing import Pool, Process
 
@@ -10,6 +10,20 @@ class Perceptron:
         """
         Just an encapsulation of independent helper functions
         """
+
+        def load_data_from_MNIST(self, path_to_MNIST = './data/'):
+            print("Loading data from MNIST")
+            images = idx2numpy.convert_from_file('./data/train-images.idx3-ubyte')
+            labels = idx2numpy.convert_from_file('./data/train-labels.idx1-ubyte')
+            data = {}
+            for i in range(len(labels)):
+                label, image = labels[i], images[i]
+                if data.get(label) == None:
+                    data[label] = []
+                data[label].append(image.flatten())
+            symbols = list(data.keys())
+            symbols.sort()
+            return data, symbols
 
         def load_data(self, path, symbols):
             """
@@ -96,6 +110,18 @@ class Perceptron:
                     training.append(data[index])
             return training, testing
 
+        def test_accuracy(self, weights, testing_set_i, testing_set_j):
+            """
+            Tests the current accuracy of the weights on some testing data. 
+            """
+            acc = 0
+            for index in range(min(len(testing_set_i), len(testing_set_j))):
+                if np.dot(testing_set_i[index], weights) > 0:
+                    acc += 1
+                if np.dot(testing_set_j[index], weights) < 0:
+                    acc += 1
+            return acc/2/min(len(testing_set_i), len(testing_set_j))
+
         def convert_to_important(self, weights):
             index_sorted = np.argsort([-abs(val) for val in weights])
             def converter(num_important):
@@ -112,23 +138,37 @@ class Perceptron:
             randIndices += 1
             return randIndices
 
-    def __init__(self, path_to_data = "images/", symbols = None, DATA_DIM = (28, 28)):
+        def image_to_data(self, image_path, view):
+            """
+            Converts an input image of any size and resizes it to (28, 28) properly
+            """
+            assert image_path[-3:] == 'jpg', "Image must be a jpeg file"
+            img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+            h, w = img.shape
+            if h > w:
+                padding = np.zeros(((h - w) // 2, h))
+                img = np.hstack((padding, img, padding))
+            elif w > h:
+                padding = np.zeros((w, (w - h) // 2))
+                img = np.vstack((padding, img, padding))
+            img = cv2.resize(img, (28, 28))
+            show_image = np.where(img > 127, 255, 0)
+            cv2.imwrite(image_path[:len(image_path)-4] + '_scaled.jpg', show_image)
+            if view:
+                cv2.imshow('img', show_image)
+                cv2.waitKey()
+            img = np.where(img > 127, 0, 1)
+            img = img.flatten()
+            return img
+
+    def __init__(self, path_to_data = 'images/', symbols = None, DATA_DIM = (28, 28)):
         self.helper = self.Helper()
         self.DIM = DATA_DIM
         self.path = path_to_data
-        self.data, self.symbols = self.helper.load_data(self.path, symbols)
-
-    def test_accuracy(self, weights, accuracies, testing_set_i, testing_set_j):
-        """
-        Tests the current accuracy of the weights on some testing data. 
-        """
-        acc = 0
-        for index in range(min(len(testing_set_i), len(testing_set_j))):
-            if np.dot(testing_set_i[index], weights) > 0:
-                acc += 1
-            if np.dot(testing_set_j[index], weights) < 0:
-                acc += 1
-        accuracies.append(acc/2/min(len(testing_set_i), len(testing_set_j)))
+        if path_to_data == 'MNIST':
+            self.data, self.symbols = self.helper.load_data_from_MNIST()
+        else:
+            self.data, self.symbols = self.helper.load_data(self.path, symbols)
 
     def train_weights(self, symbol_i, symbol_j, training_set_i, training_set_j):
         """
@@ -151,23 +191,17 @@ class Perceptron:
             self.accuracy[symbol_i] = {}
         self.accuracy[symbol_i][symbol_j] = []
 
-    def train_on_symbols(
-                            self, 
-                            symbol_i, 
-                            symbol_j, 
-                            ITERATIONS, 
-                            RATIO
-                        ):
+    def train_on_symbols(self, symbol_i, symbol_j, ITERATIONS, RATIO):
         self.initialize_training_pair(symbol_i, symbol_j)
         for _ in range(ITERATIONS):
             training_set_i, testing_set_i = self.helper.shuffle(self.data[symbol_i], RATIO)
             training_set_j, testing_set_j = self.helper.shuffle(self.data[symbol_j], RATIO)
-            self.test_accuracy(
-                                self.weights[symbol_i][symbol_j], 
-                                self.accuracy[symbol_i][symbol_j], 
-                                testing_set_i, 
-                                testing_set_j
-                              )
+            acc = self.helper.test_accuracy(
+                                            self.weights[symbol_i][symbol_j],
+                                            testing_set_i, 
+                                            testing_set_j
+                                           )
+            self.accuracy[symbol_i][symbol_j].append(acc)
             self.train_weights(
                                 symbol_i, 
                                 symbol_j, 
@@ -182,7 +216,6 @@ class Perceptron:
         """
         self.weights = {}
         self.accuracy, self.pair_accuracy = {}, []
-        print("Training")
         args = []
         if USE_MULTIPROCESSING:
             for i in range(len(self.symbols)):
@@ -247,6 +280,9 @@ class Perceptron:
                             view = True, 
                             path = ''
                          ):
+        """
+        Generates a plot of exactly how many pixels are impactful in the recognition between symbols. 
+        """
         print("Testing pixel values")
         N = self.DIM[0] * self.DIM[1]
         NUM_IMPORTANT = [N - i*10 for i in range(1, N//10)]
@@ -270,6 +306,9 @@ class Perceptron:
         plt.close()
 
     def plot_pairwise_accuracies(self, view = True, path = ''):
+        """
+        Generates a heatmap of all the pairwise symbol accuracies. 
+        """
         print("Plotting pairwise accuracies")
         xLabels = [pair[0] for pair in self.pair_accuracy]
         yLabels = [pair[1] for pair in self.pair_accuracy]
@@ -288,16 +327,7 @@ class Perceptron:
         plt.close()
 
     def predict(self, image_path, view = True):
-        assert image_path[-3:] == 'jpg', "Image must be a jpeg file"
-        img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, (28, 28))
-        show_image = np.where(img > 127, 255, 0)
-        cv2.imwrite(image_path[:len(image_path)-4] + '_scaled.jpg', show_image)
-        if view:
-            cv2.imshow('img', show_image)
-            cv2.waitKey()
-        img = np.where(img > 127, 0, 1)        
-        img = img.flatten()
+        img = self.helper.image_to_data(image_path, view)
         predictions = []
         for symbol_i in self.weights.keys():
             for symbol_j in self.weights[symbol_i].keys():
@@ -317,9 +347,9 @@ class Perceptron:
         print(max(aggregate_predictions.keys(), key = lambda key: aggregate_predictions[key]))
 
 def main():
-    p = Perceptron()
-    p.train(10)
-    p.predict('zero.jpg', view = False)
+    p = Perceptron(path_to_data='MNIST')
+    p.train(50)
+    p.predict('zero.jpg', view = True)
 
 if __name__ == '__main__':
     main()
