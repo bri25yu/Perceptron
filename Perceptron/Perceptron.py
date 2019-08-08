@@ -20,10 +20,12 @@ class Perceptron:
         Just an encapsulation of independent helper functions
         """
 
-        def load_data_from_MNIST(self, path_to_MNIST='./Data/'):
+        def load_data_from_MNIST(self, path_to_MNIST='../Data/'):
             print("Loading data from MNIST")
-            images = idx2numpy.convert_from_file('./Data/train-images.idx3-ubyte')
-            labels = idx2numpy.convert_from_file('./Data/train-labels.idx1-ubyte')
+            images = idx2numpy.convert_from_file(
+                path_to_MNIST + 'train-images.idx3-ubyte')
+            labels = idx2numpy.convert_from_file(
+                path_to_MNIST + 'train-labels.idx1-ubyte')
             data = {}
             for i in range(len(labels)):
                 label, image = labels[i], images[i]
@@ -48,7 +50,7 @@ class Perceptron:
             if not symbols:
                 symbols = os.listdir(path)
             args = [(path, symbol) for symbol in symbols]
-            with multiprocessing.Pool(processes = 10) as pool:    
+            with multiprocessing.Pool(processes=10) as pool:
                 results = pool.starmap(self.load_data_helper, args)
             data = {}
             for i in range(len(symbols)):
@@ -98,7 +100,7 @@ class Perceptron:
                 image.append(image_row)
             return np.array(image)
 
-        def shuffle(self, data, ratio = 0.9):
+        def shuffle(self, data, ratio=0.9):
             """
             Shuffles data into randomly selected training and testing data. 
 
@@ -110,7 +112,8 @@ class Perceptron:
             """
             length = len(data)
             testing_length = int(length*(1-ratio))
-            randIndices = np.random.choice(length, testing_length, replace=False)
+            randIndices = np.random.choice(
+                length, testing_length, replace=False)
             training, testing = [], []
             for index in range(length):
                 if index in randIndices:
@@ -143,6 +146,7 @@ class Perceptron:
 
         def convert_to_important(self, weights):
             index_sorted = np.argsort([-abs(val) for val in weights])
+
             def converter(num_important):
                 important = np.zeros(weights.shape)
                 indices = index_sorted[:num_important]
@@ -152,7 +156,8 @@ class Perceptron:
             return converter
 
         def get_test_pixel_indices(self, data, num):
-            randIndices = np.random.choice(len(data[0])-1, num//2, replace=False)
+            randIndices = np.random.choice(
+                len(data[0])-1, num//2, replace=False)
             randIndices = randIndices.astype(int)
             randIndices += 1
             return randIndices
@@ -176,7 +181,8 @@ class Perceptron:
             img = img.astype(np.uint8)
             show_image = np.where(img > 127, 255, 0)
             show_image = show_image.astype(np.uint8)
-            cv2.imwrite(image_path[:len(image_path)-4] + '_scaled.jpg', show_image)
+            cv2.imwrite(image_path[:len(image_path)-4] +
+                        '_scaled.jpg', show_image)
             if view:
                 cv2.imshow('img', show_image)
                 cv2.waitKey()
@@ -184,7 +190,7 @@ class Perceptron:
             img = img.flatten()
             return img
 
-    def __init__(self, path_to_data = 'images/', symbols = None, DATA_DIM = (28, 28)):
+    def __init__(self, path_to_data='images/', symbols=None, DATA_DIM=(28, 28)):
         self.helper = self.Helper()
         self.DIM = DATA_DIM
         if path_to_data == None:
@@ -194,9 +200,10 @@ class Perceptron:
             if path_to_data == 'MNIST':
                 self.data, self.symbols = self.helper.load_data_from_MNIST()
             else:
-                self.data, self.symbols = self.helper.load_data(self.path, symbols)
+                self.data, self.symbols = self.helper.load_data(
+                    self.path, symbols)
 
-    def train(self, ITERATIONS = 10, RATIO = 0.9):
+    def train(self, ITERATIONS=10, RATIO=0.9):
         """
         Works for 2-dimensional images. 
         USE_MULTIPROCESSING is currently not working!
@@ -205,62 +212,70 @@ class Perceptron:
         self.accuracy, self.pair_accuracy = {}, []
         args = []
         for i in range(len(self.symbols)):
-            print('Training symbol pairs including: {}'.format(self.symbols[i]))
+            print('Training symbol pairs including: {}'.format(
+                self.symbols[i]))
             for j in range(i+1, len(self.symbols)):
-                # Initialize the new training set. 
+                # Initialize the new training set.
                 symbol_i, symbol_j = self.symbols[i], self.symbols[j]
                 if not self.weights.get(symbol_i):
                     self.weights[symbol_i] = {}
-                self.weights[symbol_i][symbol_j] = np.random.normal(0, 1, size = self.DIM[0] * self.DIM[1])
+                self.weights[symbol_i][symbol_j] = np.random.normal(
+                    0, 1, size=self.DIM[0] * self.DIM[1])
                 if not self.accuracy.get(symbol_i):
                     self.accuracy[symbol_i] = {}
                 self.accuracy[symbol_i][symbol_j] = []
 
                 for _ in range(ITERATIONS):
-                    training_set_i, testing_set_i = self.helper.shuffle(self.data[symbol_i], RATIO)
-                    training_set_j, testing_set_j = self.helper.shuffle(self.data[symbol_j], RATIO)
+                    training_set_i, testing_set_i = self.helper.shuffle(
+                        self.data[symbol_i], RATIO)
+                    training_set_j, testing_set_j = self.helper.shuffle(
+                        self.data[symbol_j], RATIO)
                     acc = self.helper.test_accuracy(
-                                                    self.weights[symbol_i][symbol_j],
-                                                    testing_set_i, 
-                                                    testing_set_j
-                                                )
+                        self.weights[symbol_i][symbol_j],
+                        testing_set_i,
+                        testing_set_j
+                    )
                     self.accuracy[symbol_i][symbol_j].append(acc)
                     self.helper.train_weights(
-                                                self.weights[symbol_i][symbol_j], 
-                                                training_set_i, 
-                                                training_set_j
-                                            )
-                self.pair_accuracy.append([symbol_i, symbol_j, self.accuracy[symbol_i][symbol_j][-1]])
+                        self.weights[symbol_i][symbol_j],
+                        training_set_i,
+                        training_set_j
+                    )
+                self.pair_accuracy.append(
+                    [symbol_i, symbol_j, self.accuracy[symbol_i][symbol_j][-1]])
 
-    def plot_accuracies(self, symbol_i, symbol_j, view = True, path = ''):
+    def plot_accuracies(self, symbol_i, symbol_j, view=True, path=''):
         print("Plotting accuracies for {0} vs {1}".format(symbol_i, symbol_j))
-        plt.plot(list(range(len(self.accuracy[symbol_i][symbol_j]))), self.accuracy[symbol_i][symbol_j])
+        plt.plot(list(range(
+            len(self.accuracy[symbol_i][symbol_j]))), self.accuracy[symbol_i][symbol_j])
         plt.savefig("iterations_vs_acc_{0}_{1}.jpg".format(symbol_i, symbol_j))
         if view:
             plt.show()
             plt.pause(3)
         plt.close()
 
-    def visualize_weights(self, symbol_i, symbol_j, view = True, path = ''):
+    def visualize_weights(self, symbol_i, symbol_j, view=True, path=''):
         """
         Plots the "importance" of each pixel in a comparison between two symbols. 
         """
         print("Visualizing weights")
-        image = self.helper.weights_to_image(self.weights[symbol_i][symbol_j], self.DIM)
+        image = self.helper.weights_to_image(
+            self.weights[symbol_i][symbol_j], self.DIM)
         image = image.astype(np.uint8)
         cv2.imwrite('weights_{0}_{1}.png'.format(symbol_i, symbol_j), image)
         if view:
-            cv2.imshow('Weights for classifying {0} vs {1}'.format(symbol_i, symbol_j), image)
+            cv2.imshow('Weights for classifying {0} vs {1}'.format(
+                symbol_i, symbol_j), image)
             cv2.waitKey()
 
     def test_pixel_values(
-                            self, 
-                            symbol_i, 
-                            symbol_j, 
-                            TEST_SIZE = 1000, 
-                            view = True, 
-                            path = ''
-                         ):
+        self,
+        symbol_i,
+        symbol_j,
+        TEST_SIZE=1000,
+        view=True,
+        path=''
+    ):
         """
         Generates a plot of exactly how many pixels are impactful in the recognition between symbols. 
         """
@@ -268,11 +283,13 @@ class Perceptron:
         N = self.DIM[0] * self.DIM[1]
         NUM_IMPORTANT = [N - i*10 for i in range(1, N//10)]
         accuracies = []
-        converter = self.helper.convert_to_important(self.weights[symbol_i][symbol_j])
+        converter = self.helper.convert_to_important(
+            self.weights[symbol_i][symbol_j])
         for num in NUM_IMPORTANT:
             acc = 0
             important = converter(num)
-            randIndices = self.helper.get_test_pixel_indices(self.data[symbol_i], TEST_SIZE)
+            randIndices = self.helper.get_test_pixel_indices(
+                self.data[symbol_i], TEST_SIZE)
             for index in randIndices:
                 if np.dot(self.data[symbol_i][index], important) > 0:
                     acc += 1
@@ -286,7 +303,7 @@ class Perceptron:
             plt.pause(3)
         plt.close()
 
-    def plot_pairwise_accuracies(self, view = True, path = ''):
+    def plot_pairwise_accuracies(self, view=True, path=''):
         """
         Generates a heatmap of all the pairwise symbol accuracies. 
         """
@@ -295,11 +312,11 @@ class Perceptron:
         yLabels = [pair[1] for pair in self.pair_accuracy]
         vals = [pair[2] for pair in self.pair_accuracy]
         df = pd.DataFrame({
-                            'xLabels': xLabels, 
-                            'yLabels': yLabels, 
-                            'Values': vals
-                        })
-        df = df.pivot(index = 'xLabels', columns = 'yLabels', values = 'Values')
+            'xLabels': xLabels,
+            'yLabels': yLabels,
+            'Values': vals
+        })
+        df = df.pivot(index='xLabels', columns='yLabels', values='Values')
         ax = sns.heatmap(df)
         plt.savefig(path + 'pairwise_accuracies.jpg')
         if view:
@@ -307,7 +324,7 @@ class Perceptron:
             plt.pause(3)
         plt.close()
 
-    def predict(self, image_path, view = True):
+    def predict(self, image_path, view=True):
         img = self.helper.image_to_data(image_path, view)
         predictions = []
         for symbol_i in self.weights.keys():
@@ -323,9 +340,10 @@ class Perceptron:
         for prediction in predictions:
             aggregate_predictions[prediction] += 1
         print("Aggregate predictions: \n{}".format(aggregate_predictions))
-        print("Overall prediction: {}".format(max(aggregate_predictions.keys(), key = lambda key: aggregate_predictions[key])))
-    
-    def load_weights(self, path_to_weights = '', DIM = (28, 28)):
+        print("Overall prediction: {}".format(
+            max(aggregate_predictions.keys(), key=lambda key: aggregate_predictions[key])))
+
+    def load_weights(self, path_to_weights='', DIM=(28, 28)):
         if DIM is not None:
             self.DIM = DIM
         self.weights, self.symbols = {}, set()
@@ -336,14 +354,15 @@ class Perceptron:
                 symbol_i, symbol_j = lines[2 * i].split(':::')
                 self.symbols.add(symbol_i)
                 self.symbols.add(symbol_j)
-                if self.weights.get(symbol_i) == None:
+                if self.weights.get(symbol_i) is None:
                     self.weights[symbol_i] = {}
                 new_weight = lines[2 * i + 1].split(' ')[:DIM[0]*DIM[1]]
-                self.weights[symbol_i][symbol_j] = np.array(new_weight, np.float64)
+                self.weights[symbol_i][symbol_j] = np.array(
+                    new_weight, np.float64)
         self.symbols = list(self.symbols)
         self.symbols.sort()
 
-    def save_weights(self, path_to_weights = ''):
+    def save_weights(self, path_to_weights=''):
         print("Saving weights")
         with open(path_to_weights + 'weights.txt', 'w') as file:
             to_write = ''
@@ -356,9 +375,11 @@ class Perceptron:
                     to_write += '\n'
             file.writelines(to_write)
 
+
 def main():
-    p = Perceptron(path_to_data = None)
-    p.predict('zero.jpg', view = False)
+    p = Perceptron(path_to_data='MNIST')
+    p.predict('../Data/zero.jpg', view=False)
+
 
 if __name__ == '__main__':
     main()
