@@ -1,7 +1,17 @@
+# System interfaces
+import os
+import multiprocessing
 
-import os, multiprocessing # General libraries
-import numpy as np, pandas as pd, idx2numpy # Data processing libraries
-import matplotlib.pyplot as plt, seaborn as sns, cv2 # Plotting libraries
+# Data manipulation tools
+import numpy as np
+import pandas as pd
+import idx2numpy
+
+# Visualization tools
+import matplotlib.pyplot as plt
+import seaborn as sns
+import cv2
+
 
 class Perceptron:
 
@@ -10,10 +20,10 @@ class Perceptron:
         Just an encapsulation of independent helper functions
         """
 
-        def load_data_from_MNIST(self, path_to_MNIST = './data/'):
+        def load_data_from_MNIST(self, path_to_MNIST='./Data/'):
             print("Loading data from MNIST")
-            images = idx2numpy.convert_from_file('./data/train-images.idx3-ubyte')
-            labels = idx2numpy.convert_from_file('./data/train-labels.idx1-ubyte')
+            images = idx2numpy.convert_from_file('./Data/train-images.idx3-ubyte')
+            labels = idx2numpy.convert_from_file('./Data/train-labels.idx1-ubyte')
             data = {}
             for i in range(len(labels)):
                 label, image = labels[i], images[i]
