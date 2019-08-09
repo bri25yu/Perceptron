@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import cv2
 
+# Custom imports
+import Helper
+
 
 class Perceptron:
 
@@ -16,16 +19,15 @@ class Perceptron:
         symbols=None,
         DATA_DIM=(28, 28)
     ):
-        self.helper = self.Helper()
         self.DIM = DATA_DIM
         if path_to_data is None:
             self.path = None
         else:
             self.path = path_to_data
             if path_to_data == 'MNIST':
-                self.data, self.symbols = self.helper.load_data_from_MNIST()
+                self.data, self.symbols = Helper.load_data_from_MNIST()
             else:
-                self.data, self.symbols = self.helper.load_data(
+                self.data, self.symbols = Helper.load_data(
                     self.path, symbols)
 
     def train(self, ITERATIONS=10, RATIO=0.9):
@@ -51,17 +53,17 @@ class Perceptron:
                 self.accuracy[symbol_i][symbol_j] = []
 
                 for _ in range(ITERATIONS):
-                    training_set_i, testing_set_i = self.helper.shuffle(
+                    training_set_i, testing_set_i = Helper.shuffle(
                         self.data[symbol_i], RATIO)
-                    training_set_j, testing_set_j = self.helper.shuffle(
+                    training_set_j, testing_set_j = Helper.shuffle(
                         self.data[symbol_j], RATIO)
-                    acc = self.helper.test_accuracy(
+                    acc = Helper.test_accuracy(
                         self.weights[symbol_i][symbol_j],
                         testing_set_i,
                         testing_set_j
                     )
                     self.accuracy[symbol_i][symbol_j].append(acc)
-                    self.helper.train_weights(
+                    Helper.train_weights(
                         self.weights[symbol_i][symbol_j],
                         training_set_i,
                         training_set_j
@@ -87,7 +89,7 @@ class Perceptron:
         Plots the "importance" of each pixel between two symbols.
         """
         print("Visualizing weights")
-        image = self.helper.weights_to_image(
+        image = Helper.weights_to_image(
             self.weights[symbol_i][symbol_j], self.DIM)
         image = image.astype(np.uint8)
         cv2.imwrite('weights_{0}_{1}.png'.format(symbol_i, symbol_j), image)
@@ -112,12 +114,12 @@ class Perceptron:
         N = self.DIM[0] * self.DIM[1]
         NUM_IMPORTANT = [N - i*10 for i in range(1, N//10)]
         accuracies = []
-        converter = self.helper.convert_to_important(
+        converter = Helper.convert_to_important(
             self.weights[symbol_i][symbol_j])
         for num in NUM_IMPORTANT:
             acc = 0
             important = converter(num)
-            randIndices = self.helper.get_test_pixel_indices(
+            randIndices = Helper.get_test_pixel_indices(
                 self.data[symbol_i], TEST_SIZE)
             for index in randIndices:
                 if np.dot(self.data[symbol_i][index], important) > 0:
@@ -154,7 +156,7 @@ class Perceptron:
         plt.close()
 
     def predict(self, image_path, view=True):
-        img = self.helper.image_to_data(image_path, view)
+        img = Helper.image_to_data(image_path, view)
         predictions = []
         for symbol_i in self.weights.keys():
             for symbol_j in self.weights[symbol_i].keys():
@@ -204,13 +206,3 @@ class Perceptron:
                         to_write += str(val) + ' '
                     to_write += '\n'
             file.writelines(to_write)
-
-
-def main():
-    p = Perceptron(path_to_data='MNIST')
-    p.load_weights('../Output/')
-    p.predict('../Data/zero.jpg', view=False)
-
-
-if __name__ == '__main__':
-    main()
