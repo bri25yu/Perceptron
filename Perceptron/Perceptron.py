@@ -29,7 +29,7 @@ class Perceptron:
             data = {}
             for i in range(len(labels)):
                 label, image = labels[i], images[i]
-                if data.get(label) == None:
+                if data.get(label) is None:
                     data[label] = []
                 data[label].append(image.flatten())
             symbols = list(data.keys())
@@ -38,11 +38,13 @@ class Perceptron:
 
         def load_data(self, path, symbols):
             """
-            Loads images from a text file of 0's and 1's into an images array of (image, symbol) tuples. 
+            Loads images from a text file of 0's and 1's into an images array
+            of (image, symbol) tuples.
 
-            @param path: Where the images are stored. 
-            @param symbols: Which symbols to load into an images array. 
-                            Default is None, which loads all the images and symbols from a images folder. 
+            @param path: Where the images are stored.
+            @param symbols: Which symbols to load into an images array.
+                            Default is None, which loads all the images and
+                                symbols from a images folder.
 
             @return Returns a list of a symbol string and its images.
             """
@@ -84,7 +86,7 @@ class Perceptron:
 
         def weights_to_image(self, weights, DIM):
             """
-            Converts a flat weights array into a DIM image to visualize. 
+            Converts a flat weights array into a DIM image to visualize.
             """
             image_vals = np.reshape(weights, DIM)
             min_val, max_val = np.amin(weights), np.amax(weights)
@@ -102,13 +104,15 @@ class Perceptron:
 
         def shuffle(self, data, ratio=0.9):
             """
-            Shuffles data into randomly selected training and testing data. 
+            Shuffles data into randomly selected training and testing data.
 
-            @param data: data to sort into training/testing sets
-            @param ratio: Ratio between training and testing data. 
-                            Default is 0.9, which means 90% of data will be training and 10% will be testing
+            @param data: data to sort into training/testing sets.
+            @param ratio: Ratio between training and testing data.
+                            Default is 0.9, which means 90% of data will be
+                                training and 10% will be testing.
 
-            @return Returns a tuple of arrays of tuples of training data/labels and testing data/labels, respectively
+            @return Returns a tuple of arrays of tuples of training
+                data/labels and testing data/labels, respectively.
             """
             length = len(data)
             testing_length = int(length*(1-ratio))
@@ -124,7 +128,7 @@ class Perceptron:
 
         def test_accuracy(self, weights, testing_set_i, testing_set_j):
             """
-            Tests the current accuracy of the weights on some testing data. 
+            Tests the current accuracy of the weights on some testing data.
             """
             acc = 0
             for index in range(min(len(testing_set_i), len(testing_set_j))):
@@ -164,7 +168,7 @@ class Perceptron:
 
         def image_to_data(self, image_path, view):
             """
-            Converts an input image of any size and resizes it to (28, 28) properly
+            Converts an input image of any size and resizes it to (28, 28).
             """
             assert image_path[-3:] == 'jpg', "Image must be a jpeg file"
             img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -190,10 +194,15 @@ class Perceptron:
             img = img.flatten()
             return img
 
-    def __init__(self, path_to_data='images/', symbols=None, DATA_DIM=(28, 28)):
+    def __init__(
+        self,
+        path_to_data='images/',
+        symbols=None,
+        DATA_DIM=(28, 28)
+    ):
         self.helper = self.Helper()
         self.DIM = DATA_DIM
-        if path_to_data == None:
+        if path_to_data is None:
             self.path = None
         else:
             self.path = path_to_data
@@ -205,7 +214,7 @@ class Perceptron:
 
     def train(self, ITERATIONS=10, RATIO=0.9):
         """
-        Works for 2-dimensional images. 
+        Works for 2-dimensional images.
         USE_MULTIPROCESSING is currently not working!
         """
         self.weights = {}
@@ -241,13 +250,16 @@ class Perceptron:
                         training_set_i,
                         training_set_j
                     )
-                self.pair_accuracy.append(
-                    [symbol_i, symbol_j, self.accuracy[symbol_i][symbol_j][-1]])
+                self.pair_accuracy.append([
+                    symbol_i,
+                    symbol_j,
+                    self.accuracy[symbol_i][symbol_j][-1]])
 
     def plot_accuracies(self, symbol_i, symbol_j, view=True, path=''):
         print("Plotting accuracies for {0} vs {1}".format(symbol_i, symbol_j))
-        plt.plot(list(range(
-            len(self.accuracy[symbol_i][symbol_j]))), self.accuracy[symbol_i][symbol_j])
+        plt.plot(list(range(len(
+            self.accuracy[symbol_i][symbol_j]))),
+            self.accuracy[symbol_i][symbol_j])
         plt.savefig("iterations_vs_acc_{0}_{1}.jpg".format(symbol_i, symbol_j))
         if view:
             plt.show()
@@ -256,7 +268,7 @@ class Perceptron:
 
     def visualize_weights(self, symbol_i, symbol_j, view=True, path=''):
         """
-        Plots the "importance" of each pixel in a comparison between two symbols. 
+        Plots the "importance" of each pixel between two symbols.
         """
         print("Visualizing weights")
         image = self.helper.weights_to_image(
@@ -277,7 +289,8 @@ class Perceptron:
         path=''
     ):
         """
-        Generates a plot of exactly how many pixels are impactful in the recognition between symbols. 
+        Generates a plot of exactly how many pixels are impactful in the
+            recognition between symbols.
         """
         print("Testing pixel values")
         N = self.DIM[0] * self.DIM[1]
@@ -305,7 +318,7 @@ class Perceptron:
 
     def plot_pairwise_accuracies(self, view=True, path=''):
         """
-        Generates a heatmap of all the pairwise symbol accuracies. 
+        Generates a heatmap of all the pairwise symbol accuracies.
         """
         print("Plotting pairwise accuracies")
         xLabels = [pair[0] for pair in self.pair_accuracy]
@@ -340,8 +353,9 @@ class Perceptron:
         for prediction in predictions:
             aggregate_predictions[prediction] += 1
         print("Aggregate predictions: \n{}".format(aggregate_predictions))
-        print("Overall prediction: {}".format(
-            max(aggregate_predictions.keys(), key=lambda key: aggregate_predictions[key])))
+        print("Overall prediction: {}".format(max(
+            aggregate_predictions.keys(),
+            key=lambda key: aggregate_predictions[key])))
 
     def load_weights(self, path_to_weights='', DIM=(28, 28)):
         if DIM is not None:
