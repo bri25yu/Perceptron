@@ -11,19 +11,27 @@ import cv2
 
 
 def load_data_from_MNIST(path_to_MNIST='../Data/'):
+
     print("Loading data from MNIST")
-    images = idx2numpy.convert_from_file(
-        path_to_MNIST + 'train-images.idx3-ubyte')
-    labels = idx2numpy.convert_from_file(
-        path_to_MNIST + 'train-labels.idx1-ubyte')
+
+    trainingImagesPath = path_to_MNIST + 'train-images.idx3-ubyte'
+    trainingLabelsPath = path_to_MNIST + 'train-labels.idx1-ubyte'
+
+    images = idx2numpy.convert_from_file(trainingImagesPath)
+    labels = idx2numpy.convert_from_file(trainingLabelsPath)
+
     data = {}
     for i in range(len(labels)):
+
         label, image = labels[i], images[i]
         if data.get(label) is None:
             data[label] = []
+
         data[label].append(image.flatten())
+
     symbols = list(data.keys())
     symbols.sort()
+
     return data, symbols
 
 

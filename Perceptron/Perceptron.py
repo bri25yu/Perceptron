@@ -9,6 +9,7 @@ import cv2
 
 # Custom imports
 import Helper
+import WeightsHelper
 
 
 class Perceptron:
@@ -84,7 +85,13 @@ class Perceptron:
             plt.pause(3)
         plt.close()
 
-    def visualize_weights(self, symbol_i, symbol_j, view=True, path=''):
+    def visualize_weights(
+        self,
+        symbol_i,
+        symbol_j,
+        view=True,
+        path='../Output/'
+    ):
         """
         Plots the "importance" of each pixel between two symbols.
         """
@@ -92,7 +99,10 @@ class Perceptron:
         image = Helper.weights_to_image(
             self.weights[symbol_i][symbol_j], self.DIM)
         image = image.astype(np.uint8)
-        cv2.imwrite('weights_{0}_{1}.png'.format(symbol_i, symbol_j), image)
+        cv2.imwrite(
+            path + 'weights_{0}_{1}.png'.format(symbol_i, symbol_j),
+            image)
+
         if view:
             cv2.imshow('Weights for classifying {0} vs {1}'.format(
                 symbol_i, symbol_j), image)
@@ -175,34 +185,8 @@ class Perceptron:
             aggregate_predictions.keys(),
             key=lambda key: aggregate_predictions[key])))
 
-    def load_weights(self, path_to_weights='', DIM=(28, 28)):
-        if DIM is not None:
-            self.DIM = DIM
-        self.weights, self.symbols = {}, set()
-        with open(path_to_weights + 'weights.txt', 'r') as file:
-            lines = file.read()
-            lines = lines.split('\n')
-            for i in range(len(lines) // 2):
-                symbol_i, symbol_j = lines[2 * i].split(':::')
-                self.symbols.add(symbol_i)
-                self.symbols.add(symbol_j)
-                if self.weights.get(symbol_i) is None:
-                    self.weights[symbol_i] = {}
-                new_weight = lines[2 * i + 1].split(' ')[:DIM[0]*DIM[1]]
-                self.weights[symbol_i][symbol_j] = np.array(
-                    new_weight, np.float64)
-        self.symbols = list(self.symbols)
-        self.symbols.sort()
+    def load_weights(self, path='', DIM=(28, 28)):
+        self.symbols, self.weights = WeightsHelper.load_weights(path, DIM)
 
     def save_weights(self, path_to_weights=''):
-        print("Saving weights")
-        with open(path_to_weights + 'weights.txt', 'w') as file:
-            to_write = ''
-            for i in range(len(self.symbols)):
-                for j in range(i+1, len(self.symbols)):
-                    symbol_i, symbol_j = self.symbols[i], self.symbols[j]
-                    to_write += str(symbol_i) + r':::' + str(symbol_j) + '\n'
-                    for val in self.weights[symbol_i][symbol_j]:
-                        to_write += str(val) + ' '
-                    to_write += '\n'
-            file.writelines(to_write)
+        WeightsHelper.save_weights(self.symbols, self.weights)
