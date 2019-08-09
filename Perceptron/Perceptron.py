@@ -10,6 +10,7 @@ import cv2
 # Custom imports
 import Helper
 import WeightsHelper
+import VisualizationHelper
 
 
 class Perceptron:
@@ -114,18 +115,18 @@ class Perceptron:
         symbol_j,
         TEST_SIZE=1000,
         view=True,
-        path=''
+        path='../Output/'
     ):
         """
         Generates a plot of exactly how many pixels are impactful in the
-            recognition between symbols.
+            recognition between symbol_i and symbol_j.
         """
         print("Testing pixel values")
         N = self.DIM[0] * self.DIM[1]
-        NUM_IMPORTANT = [N - i*10 for i in range(1, N//10)]
+        NUM_IMPORTANT = [N - i * 10 for i in range(1, N // 10)]
         accuracies = []
         converter = Helper.convert_to_important(
-            self.weights[symbol_i][symbol_j])
+            self.weights['{}'.format(symbol_i)]['{}'.format(symbol_j)])
         for num in NUM_IMPORTANT:
             acc = 0
             important = converter(num)
@@ -137,8 +138,13 @@ class Perceptron:
                 if np.dot(self.data[symbol_j][index], important) < 0:
                     acc += 1
             accuracies.append(acc/TEST_SIZE)
+
         plt.plot(NUM_IMPORTANT, accuracies, 'ro')
-        plt.savefig('features_vs_acc_{0}_{1}.jpg'.format(symbol_i, symbol_j))
+        plt.xlabel('Number of important pixels')
+        plt.ylabel('Accuracy')
+
+        plt.savefig(
+            path + 'features_vs_acc_{0}_{1}.png'.format(symbol_i, symbol_j))
         if view:
             plt.show()
             plt.pause(3)
