@@ -8,9 +8,9 @@ import seaborn as sns
 import cv2
 
 # Custom imports
-import Helper
-import WeightsHelper
-import VisualizationHelper
+import Perceptron.Helper as Helper
+import Perceptron.WeightsHelper as WeightsHelper
+import Perceptron.VisualizationHelper as VisualizationHelper
 
 
 class Perceptron:

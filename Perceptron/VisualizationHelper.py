@@ -8,7 +8,7 @@ import seaborn as sns
 import cv2
 
 # Custom imports
-import Helper
+import Perceptron.Helper as Helper
 
 
 def plot_accuracies(self, symbol_i, symbol_j, view=True, path=''):
