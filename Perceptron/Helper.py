@@ -10,7 +10,7 @@ import idx2numpy
 import cv2
 
 
-def load_data_from_MNIST(path_to_MNIST='Data/'):
+def load_data_from_MNIST(path_to_MNIST='./Data/'):
 
     print("Loading data from MNIST")
 

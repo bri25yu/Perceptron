@@ -75,7 +75,7 @@ class Perceptron:
                     symbol_j,
                     self.accuracy[symbol_i][symbol_j][-1]])
 
-    def plot_accuracies(self, symbol_i, symbol_j, view=True, path=''):
+    def plot_accuracies(self, symbol_i, symbol_j, view=True, path='./Output/'):
         print("Plotting accuracies for {0} vs {1}".format(symbol_i, symbol_j))
         plt.plot(list(range(len(
             self.accuracy[symbol_i][symbol_j]))),
@@ -91,7 +91,7 @@ class Perceptron:
         symbol_i,
         symbol_j,
         view=True,
-        path='../Output/'
+        path='./Output/'
     ):
         """
         Plots the "importance" of each pixel between two symbols.
@@ -115,7 +115,7 @@ class Perceptron:
         symbol_j,
         TEST_SIZE=1000,
         view=True,
-        path='../Output/'
+        path='./Output/'
     ):
         """
         Generates a plot of exactly how many pixels are impactful in the
@@ -150,7 +150,7 @@ class Perceptron:
             plt.pause(3)
         plt.close()
 
-    def plot_pairwise_accuracies(self, view=True, path=''):
+    def plot_pairwise_accuracies(self, view=True, path='./Output/'):
         """
         Generates a heatmap of all the pairwise symbol accuracies.
         """
